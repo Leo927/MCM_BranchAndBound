@@ -15,19 +15,26 @@ class MCMGraph(nx.Graph):
         self.free_edges = nx.Graph()
         self._score = 0
 
+    @property
+    def num_edges(self):
+        return len(self.edges)
+    
+    @property
+    def num_nodes(self):
+        return len(self.nodes)
+
     def __hash__(self):
-        return hash((self.not_excluded_edges))
+        return hash(self.included_edges)
 
     def __lt__(self, other):
         return self.score < other.score
 
     def __eq__(self, other):
         same_includes = self.included_edges == other.included_edges
-        same_excludes = self.excluded_edges == other.excluded_edges
-        return same_includes and same_excludes
+        return same_includes
 
     def __str__(self):
-        return f'nodes: {self.nodes(True)}\nincluded:{self.included_edges.edges}\nexcluded:{self.excluded_edges.edges}'
+        return f'nodes: {self.nodes(True)}\nincluded:{self.included_edges.edges}\nexcluded:{self.excluded_edges.edges}\nscore: {self.score}'
 
     def __repr__(self):
         return str(self)
@@ -81,7 +88,6 @@ class MCMGraph(nx.Graph):
         new_score = self.get_node_score(node)
         diff = new_score - self.nodes[node][score]
         self._score += diff
-        get_logger().debug(f'diff = {diff}, score = {self.score}')
         self.nodes[node][score] = new_score
         
     def propagate_constraints(self, edge):
@@ -97,14 +103,17 @@ class MCMGraph(nx.Graph):
         is_excluded = self.excluded_edges.has_edge(*edge)
         return is_excluded or is_excluded
 
-    def get_next_states(self):
+    def get_next_states(self, visited_states=set()):
         states = set()
         for edge in self.free_edges.edges:
             next_state = copy.deepcopy(self)
             next_state.add_include_edge(*edge)
+            if next_state in visited_states:
+                continue
             next_state.propagate_constraints(edge)
-            get_logger().debug(next_state)
+            get_logger().debug(f'Added next state {next_state}')
             states.add(next_state)
+            visited_states.add(next_state)
         return states
 
     def draw(self):
