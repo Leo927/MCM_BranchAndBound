@@ -22,19 +22,16 @@ class BranchAndBound:
         self.global_best = None
         self.global_best_state = None
         self.original_state = original_state
-        self.visited_states = set()
         self.start_time = None
         self.iter_count = 0
         self.complete_time = None
 
     def find_best(self):
         self.start_time = time.time()
-        pq = PriorityQueue()
-        pq.put((self.original_state.local_best, self.original_state))
+        pq = MaxPriorityQueue()
+        pq.put((self.original_state.order, self.original_state))
         while(not pq.empty()):
-            local_best, current_state = pq.get()
-            if self.is_visited(current_state):
-                continue
+            order, current_state = pq.get()
             self.iter_count+= 1
             get_logger().debug(f'current_state: {current_state}')
             if current_state.worst_than(self.global_best):
@@ -44,15 +41,9 @@ class BranchAndBound:
             if len(next_states) == 0:
                 self.update_best(current_state)
             for next_s in next_states:
-                pq.put((next_s.local_best, next_s))
+                pq.put((next_s.order, next_s))
         self.complete_time = time.time() - self.start_time
         return self.global_best_state
-
-    def is_visited(self, state):
-        if state in self.visited_states:
-            return True
-        self.visited_states.add(state)
-        return False        
 
     def update_best(self,state):
         local_best = state.local_best
@@ -61,10 +52,24 @@ class BranchAndBound:
         if self.global_best == None or local_best > self.global_best:
             self.global_best = local_best
             self.global_best_state = state
+            get_logger().debug(f'Global best is updated to {self.global_best}')
+
+def experiment(n,p, num_run = 10):
+    iterations = []
+    runing_times = []
+    for i in range(num_run):
+        G = MCMGraph()
+        random_graph = nx.fast_gnp_random_graph(n, p)
+        G.add_edges_from(random_graph.edges)
+        G.initialize()
+        bnb = BranchAndBound(G)
+        best = bnb.find_best()
+        iterations.append(bnb.iter_count)
+        runing_times.append(bnb.complete_time)
 
 if __name__ == "__main__":
     G = MCMGraph()
-    random_graph = nx.fast_gnp_random_graph(7, 0.3)
+    random_graph = nx.fast_gnp_random_graph(100, 0.2)
     print(f'graph generate complete')
     G.add_edges_from(random_graph.edges)
     G.initialize()
