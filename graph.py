@@ -124,6 +124,8 @@ class MCMGraph(nx.Graph):
 
         next_state = copy.deepcopy(self)
         next_state.add_exclude_edge(*edge)
+        next_state.update_score(edge[0])
+        next_state.update_score(edge[1])
         #get_logger().debug(f'Added next state {next_state}')
         states.add(next_state)
         return states
