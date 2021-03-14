@@ -42,7 +42,7 @@ class MCMGraph(nx.Graph):
         return same_includes
 
     def __str__(self):
-        return f'nodes: {self.nodes(True)}\nincluded:{self.included_edges.edges}\nexcluded:{self.excluded_edges.edges}\nscore: {self.score}'
+        return f'nodes: {self.nodes(True)}\nincluded:{self.included_edges.edges}\nexcluded:{self.excluded_edges.edges}\nscore: {self.score}\nRemaining Edges:{self.free_edges.edges}'
 
     def __repr__(self):
         return str(self)
@@ -87,7 +87,7 @@ class MCMGraph(nx.Graph):
     def worst_than(self, global_best):
         if global_best == None:
             return False
-        return self.score <= global_best
+        return int(self.score) <= global_best
 
     def get_node_score(self, node):
         return int(self.not_excluded_edges.degree(node) >= 1)
