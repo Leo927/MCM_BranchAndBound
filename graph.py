@@ -1,6 +1,7 @@
 import networkx as nx
 import copy
 import matplotlib.pyplot as plt
+import random
 from queue import Queue
 from helper import get_logger
 
@@ -110,17 +111,21 @@ class MCMGraph(nx.Graph):
         is_excluded = self.excluded_edges.has_edge(*edge)
         return is_excluded or is_excluded
 
-    def get_next_states(self, visited_states=set()):
+    def get_next_states(self):
         states = set()
-        for edge in self.free_edges.edges:
-            next_state = copy.deepcopy(self)
-            next_state.add_include_edge(*edge)
-            if next_state in visited_states:
-                continue
-            next_state.propagate_constraints(edge)
-            #get_logger().debug(f'Added next state {next_state}')
-            states.add(next_state)
-            visited_states.add(next_state)
+        free_edges = list(self.free_edges.edges())
+        if len(free_edges) == 0:
+            return states
+        edge = free_edges[0]
+        next_state = copy.deepcopy(self)
+        next_state.add_include_edge(*edge)
+        next_state.propagate_constraints(edge)
+        states.add(next_state)
+
+        next_state = copy.deepcopy(self)
+        next_state.add_exclude_edge(*edge)
+        #get_logger().debug(f'Added next state {next_state}')
+        states.add(next_state)
         return states
 
     def draw(self):
@@ -129,7 +134,7 @@ class MCMGraph(nx.Graph):
         colors = [self.label2color(self[u][v]['label']) for u,v in edges]
         weights = [self.label2weight(self[u][v]['label']) for u,v in edges]
         styles = [self.label2style(self[u][v]['label']) for u,v in edges]
-        nx.draw(self, pos, edge_color = colors, width = weights, style = styles)
+        nx.draw(self, pos, edge_color = colors, width = weights, style = styles, with_labels=True)
         edge_labels = nx.get_edge_attributes(self, 'label')
 
         #nx.draw_networkx_edge_labels(self, pos=pos, edge_labels=edge_labels)
